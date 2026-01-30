@@ -1098,7 +1098,7 @@
         // UTILITY FUNCTIONS
         function getSecureTimestamp() {
             const now = new Date();
-            return now.toISOString().replace('T', ' ').substring(0, 19) + 'Z';
+            return now.toISOString().replace('T', ' ').substring(0, 19);
         }
 
         function updateButtonStates() {
