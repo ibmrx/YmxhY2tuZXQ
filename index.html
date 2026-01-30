@@ -576,20 +576,17 @@
             manualSection.style.cssText = 'margin-top: 20px; padding: 20px; background: #1a1a1a; border: 1px solid #333;';
             
             manualSection.innerHTML = `
-                <div style="font-size: 16px; margin-bottom: 15px; color: #fff;">MANUAL OPERATIVE ENTRY</div>
+                <div style="font-size: 16px; margin-bottom: 15px; color: #fff;">DIRECT OPERATIVE VERIFICATION</div>
                 <div style="color: #888; font-size: 13px; margin-bottom: 15px;">
-                    Use if QR scanning fails. Enter operative identification exactly as shown on credentials.
+                    Enter operative reference for direct verification.
                 </div>
-                <textarea id="manualEntry" 
-                          style="width: 100%; height: 100px; background: #0a0a0a; color: #e0e0e0; 
-                                 border: 1px solid #333; padding: 10px; font-family: monospace; resize: vertical;"
-                          placeholder="Enter operative identification in format:
-        Alias: RR29
-        Reference: X72002DZD
-        Designation: Data Manipulation Specialist
-        Clearance: Social Engineering Agent No. 21"></textarea>
+                <input type="text" id="manualEntry" 
+                       style="width: 100%; background: #0a0a0a; color: #e0e0e0; 
+                              border: 1px solid #333; padding: 12px; font-family: monospace;
+                              font-size: 14px; letter-spacing: 1px;"
+                       placeholder="Enter operative reference">
                 <button id="submitManual" class="btn btn-primary" style="margin-top: 10px; width: 100%;">
-                    VERIFY MANUAL ENTRY
+                    VERIFY OPERATIVE
                 </button>
             `;
             
@@ -597,18 +594,43 @@
             
             // Add event listener for manual entry
             document.getElementById('submitManual').addEventListener('click', handleManualEntry);
+            
+            // Allow Enter key to submit
+            document.getElementById('manualEntry').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleManualEntry();
+                }
+            });
         }
 
         // HANDLE MANUAL ENTRY
         function handleManualEntry() {
-            const manualText = document.getElementById('manualEntry').value.trim();
-            if (!manualText) {
-                showError("No operative identification entered");
+            const reference = document.getElementById('manualEntry').value.trim().toUpperCase();
+            if (!reference) {
+                showError("No operative reference entered");
                 return;
             }
             
-            addLogEntry("Manual operative entry submitted");
-            processQRCode(manualText);
+            addLogEntry("Direct operative reference verification submitted: " + reference);
+            
+            // Find operative by reference
+            const operative = OPERATIVES.find(op => 
+                op.reference === reference || 
+                op.designation === reference
+            );
+            
+            if (operative) {
+                if (operative.status !== "ACTIVE") {
+                    showVerificationResult(false, `Operative ${operative.designation} status: ${operative.status}`);
+                } else {
+                    operative.verification_count = (operative.verification_count || 0) + 1;
+                    showVerificationResult(true, operative);
+                    simulateSecureNotification(operative);
+                }
+            } else {
+                showVerificationResult(false, `Operative not found: ${reference}`);
+            }
+            
             document.getElementById('manualEntry').value = '';
         }
 
@@ -621,7 +643,7 @@
             fileInput.addEventListener('change', handleFileUpload);
         }
 
-        // START CAMERA
+        // START CAMERA - FIXED FOR BACK CAMERA ON PHONES
         async function startCamera() {
             if (isCameraActive) return;
             
@@ -632,15 +654,47 @@
                     return;
                 }
                 
+                // Find back camera (environment) or front camera (user)
+                let selectedCamera = devices[0];
+                let backCamera = devices.find(device => 
+                    device.label.toLowerCase().includes('back') || 
+                    device.label.toLowerCase().includes('rear') ||
+                    device.label.toLowerCase().includes('environment')
+                );
+                
+                // If back camera found, use it. Otherwise use first available.
+                if (backCamera) {
+                    selectedCamera = backCamera;
+                    console.log("Using back camera:", backCamera.label);
+                } else {
+                    // Try to find environment-facing camera
+                    const environmentCamera = devices.find(device => {
+                        const label = device.label.toLowerCase();
+                        return !label.includes('front') && 
+                               !label.includes('user') && 
+                               !label.includes('selfie');
+                    });
+                    
+                    if (environmentCamera) {
+                        selectedCamera = environmentCamera;
+                        console.log("Using environment camera:", environmentCamera.label);
+                    }
+                }
+                
+                // Start with selected camera
                 await scanner.start(
-                    devices[0].id,
+                    selectedCamera.id,
                     {
                         fps: 10,
                         qrbox: { width: 250, height: 250 },
                         aspectRatio: 1.0
                     },
                     onQRCodeScanned,
-                    (error) => console.warn("QR Scanner error:", error)
+                    (error) => console.warn("QR Scanner error:", error),
+                    // Explicitly request back camera
+                    {
+                        facingMode: { exact: "environment" }
+                    }
                 );
                 
                 isCameraActive = true;
@@ -648,7 +702,30 @@
                 updateButtonStates();
                 
             } catch (error) {
-                showError("Failed to start camera: " + error.message);
+                console.log("Back camera failed, trying front camera...");
+                
+                // If back camera fails, try any camera
+                try {
+                    const devices = await Html5Qrcode.getCameras();
+                    if (devices.length > 0) {
+                        await scanner.start(
+                            devices[0].id,
+                            {
+                                fps: 10,
+                                qrbox: { width: 250, height: 250 },
+                                aspectRatio: 1.0
+                            },
+                            onQRCodeScanned,
+                            (error) => console.warn("QR Scanner error:", error)
+                        );
+                        
+                        isCameraActive = true;
+                        addLogEntry("Camera activated (fallback mode)");
+                        updateButtonStates();
+                    }
+                } catch (fallbackError) {
+                    showError("Failed to start camera: " + error.message);
+                }
             }
         }
 
@@ -725,8 +802,7 @@
                 // If all methods fail
                 showVerificationResult(false, 
                     "QR code could not be decoded from uploaded image. " +
-                    "Please use camera scanner or manual entry. " +
-                    "Ensure the image is clear and contains a valid operative QR code."
+                    "Please use camera scanner or direct reference entry."
                 );
                 
             } catch (error) {
@@ -846,7 +922,7 @@
                     simulateSecureNotification(operative);
                 }
             } else {
-                showVerificationResult(false, `Operative not found in secure database: ${operativeData.reference}`);
+                showVerificationResult(false, `Operative not found: ${operativeData.reference}`);
             }
             
             addLogEntry(`Verification attempt for reference: ${operativeData.reference}`);
