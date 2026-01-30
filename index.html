@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BLACKNET OPERATIVE - Verification System</title>
+    <link rel="icon" type="image/png" href="https://uploads.onecompiler.io/437muad7y/44c5p4unt/LOGO%20W%20BACKGROUND.png">
+    
+    <style>
+        /* RESET & BASE */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.4;
+        }
+
+        /* CLASSIFICATION BANNER */
+        .classification-banner {
+            background: linear-gradient(90deg, #000000 0%, #cc0000 50%, #000000 100%);
+            color: #ffffff;
+            text-align: center;
+            padding: 4px 0;
+            font-size: 11px;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #333;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        /* MAIN CONTAINER */
+        .container {
+            max-width: 800px;
+            margin: 40px auto 20px;
+            padding: 0 20px;
+            padding-top: 30px;
+        }
+
+        /* HEADER */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 20px;
+        }
+
+        .logo-container {
+            margin-bottom: 15px;
+        }
+
+        .logo {
+            height: 60px;
+            filter: brightness(0.9);
+        }
+
+        .org-name {
+            font-size: 18px;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+            color: #ffffff;
+        }
+
+        .system-title {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        /* STATUS PANEL */
+        .status-panel {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 2px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
+
+        .status-title {
+            font-size: 16px;
+            color: #ffffff;
+        }
+
+        .status-indicator {
+            padding: 4px 10px;
+            background: #333;
+            border-radius: 2px;
+            font-size: 12px;
+        }
+
+        .status-active {
+            background: #004400;
+            color: #00ff00;
+        }
+
+        .status-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            font-size: 13px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px dashed #333;
+        }
+
+        .status-label {
+            color: #888;
+        }
+
+        .status-value {
+            color: #ffffff;
+            font-weight: normal;
+        }
+
+        /* SCANNER AREA */
+        .scanner-area {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 2px;
+            padding: 25px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .scanner-title {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #ffffff;
+        }
+
+        .scanner-instruction {
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        #reader {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            border: 2px solid #333;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .camera-controls {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 20px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: #252525;
+            border-color: #555;
+        }
+
+        .btn-primary {
+            background: #003366;
+            border-color: #0066cc;
+        }
+
+        .btn-primary:hover {
+            background: #004488;
+        }
+
+        .btn-danger {
+            background: #330000;
+            border-color: #cc0000;
+        }
+
+        .btn-danger:hover {
+            background: #550000;
+        }
+
+        /* VERIFICATION RESULT */
+        .verification-result {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 2px;
+            padding: 25px;
+            margin-top: 25px;
+            display: none;
+        }
+
+        .verification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333;
+        }
+
+        .verification-title {
+            font-size: 18px;
+            color: #ffffff;
+        }
+
+        .verification-status {
+            padding: 6px 12px;
+            border-radius: 2px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .status-confirmed {
+            background: #004400;
+            color: #00ff00;
+        }
+
+        .status-denied {
+            background: #440000;
+            color: #ff0000;
+        }
+
+        .verification-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .detail-item {
+            padding: 10px;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 2px;
+        }
+
+        .detail-label {
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            color: #ffffff;
+            word-break: break-all;
+        }
+
+        .verification-message {
+            padding: 15px;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 2px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* LOGS PANEL */
+        .logs-panel {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 2px;
+            padding: 20px;
+            margin-top: 25px;
+            display: none;
+        }
+
+        .logs-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
+
+        .logs-title {
+            font-size: 16px;
+            color: #ffffff;
+        }
+
+        .logs-content {
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 12px;
+            font-family: monospace;
+        }
+
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px dashed #333;
+            color: #888;
+        }
+
+        .log-time {
+            color: #0066cc;
+            margin-right: 10px;
+        }
+
+        .log-event {
+            color: #e0e0e0;
+        }
+
+        /* FOOTER */
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #333;
+            color: #666;
+            font-size: 11px;
+        }
+
+        .protocol-notice {
+            color: #888;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        /* UTILITY CLASSES */
+        .hidden {
+            display: none;
+        }
+
+        .visible {
+            display: block;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-muted {
+            color: #666;
+        }
+
+        .mb-10 {
+            margin-bottom: 10px;
+        }
+
+        .mb-20 {
+            margin-bottom: 20px;
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 600px) {
+            .container {
+                padding: 0 15px;
+                margin-top: 35px;
+            }
+            
+            .status-details,
+            .verification-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .camera-controls {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+    
+    <!-- QR Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body>
+    <!-- CLASSIFICATION BANNER -->
+    <div class="classification-banner">
+        TOP SECRET // NOFORN // BLACKNET OPERATIVE EYES ONLY
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="logo-container">
+                <img src="https://uploads.onecompiler.io/437muad7y/44c5p4unt/LOGO%20W%20BACKGROUND.png" 
+                     alt="BLACKNET OPERATIVE" 
+                     class="logo">
+            </div>
+            <div class="org-name">BLACKNET OPERATIVE</div>
+            <div class="system-title">Secure Identity Verification System</div>
+        </div>
+
+        <!-- STATUS PANEL -->
+        <div class="status-panel">
+            <div class="status-header">
+                <div class="status-title">SYSTEM STATUS</div>
+                <div class="status-indicator status-active">ACTIVE</div>
+            </div>
+            <div class="status-details">
+                <div class="status-item">
+                    <span class="status-label">Protocol:</span>
+                    <span class="status-value">ALPHA</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Security Level:</span>
+                    <span class="status-value">MAXIMUM</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Verification Mode:</span>
+                    <span class="status-value">ACTIVE</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Audit Trail:</span>
+                    <span class="status-value">ENABLED</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCANNER AREA -->
+        <div class="scanner-area">
+            <div class="scanner-title">OPERATIVE VERIFICATION</div>
+            <div class="scanner-instruction">
+                Position operative identification QR code within scanner frame.
+                Ensure adequate lighting and stable camera positioning.
+                System will automatically process upon detection.
+            </div>
+            
+            <div id="reader"></div>
+            
+            <div class="camera-controls">
+                <button id="startCamera" class="btn btn-primary">ACTIVATE CAMERA</button>
+                <button id="stopCamera" class="btn">DEACTIVATE CAMERA</button>
+                <button id="uploadQR" class="btn">UPLOAD IMAGE</button>
+            </div>
+        </div>
+
+        <!-- VERIFICATION RESULT -->
+        <div id="verificationResult" class="verification-result">
+            <div class="verification-header">
+                <div class="verification-title">VERIFICATION RESULT</div>
+                <div id="resultStatus" class="verification-status status-confirmed">CONFIRMED</div>
+            </div>
+            
+            <div id="verificationDetails" class="verification-details">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+            
+            <div id="verificationMessage" class="verification-message">
+                <!-- Message will be inserted here -->
+            </div>
+        </div>
+
+        <!-- AUDIT LOGS -->
+        <div id="logsPanel" class="logs-panel">
+            <div class="logs-header">
+                <div class="logs-title">SECURITY AUDIT LOG</div>
+                <button id="clearLogs" class="btn btn-danger">CLEAR LOGS</button>
+            </div>
+            <div id="logsContent" class="logs-content">
+                <!-- Log entries will be inserted here -->
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            <div>BLACKNET OPERATIVE - SECURE COMMUNICATIONS</div>
+            <div class="protocol-notice">
+                All verification events are logged and encrypted. Unauthorized access is prohibited.
+            </div>
+            <div class="protocol-notice">
+                Protocol Version: 2.7.1 | Last Updated: 2024-01-15
+            </div>
+        </div>
+    </div>
+
+    <!-- HIDDEN FILE INPUT -->
+    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+
+    <script>
+        // OPERATIVE DATABASE (Encrypted - In production, this would be on server)
+        const OPERATIVES = [
+            {
+                reference: "X72002DZD",
+                designation: "RR29",
+                title: "Data Manipulation Specialist",
+                clearance: "LEVEL 7",
+                status: "ACTIVE",
+                secure_email: "operative.rr29@secure.blacknet",
+                verification_count: 0
+            }
+            // Additional operatives can be added here
+        ];
+
+        // SYSTEM STATE
+        let scanner = null;
+        let auditLogs = [];
+        let isCameraActive = false;
+
+        // DOM ELEMENTS
+        const startCameraBtn = document.getElementById('startCamera');
+        const stopCameraBtn = document.getElementById('stopCamera');
+        const uploadQRBtn = document.getElementById('uploadQR');
+        const verificationResult = document.getElementById('verificationResult');
+        const verificationDetails = document.getElementById('verificationDetails');
+        const verificationMessage = document.getElementById('verificationMessage');
+        const resultStatus = document.getElementById('resultStatus');
+        const logsPanel = document.getElementById('logsPanel');
+        const logsContent = document.getElementById('logsContent');
+        const clearLogsBtn = document.getElementById('clearLogs');
+        const fileInput = document.getElementById('fileInput');
+
+        // INITIALIZATION
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAuditLogs();
+            initializeScanner();
+            setupEventListeners();
+        });
+
+        // INITIALIZE QR SCANNER
+        function initializeScanner() {
+            scanner = new Html5Qrcode("reader");
+        }
+
+        // SETUP EVENT LISTENERS
+        function setupEventListeners() {
+            startCameraBtn.addEventListener('click', startCamera);
+            stopCameraBtn.addEventListener('click', stopCamera);
+            uploadQRBtn.addEventListener('click', () => fileInput.click());
+            clearLogsBtn.addEventListener('click', clearAuditLogs);
+            fileInput.addEventListener('change', handleFileUpload);
+        }
+
+        // START CAMERA
+        async function startCamera() {
+            if (isCameraActive) return;
+            
+            try {
+                const devices = await Html5Qrcode.getCameras();
+                if (devices.length === 0) {
+                    showError("No camera devices found");
+                    return;
+                }
+                
+                await scanner.start(
+                    devices[0].id,
+                    {
+                        fps: 10,
+                        qrbox: { width: 250, height: 250 },
+                        aspectRatio: 1.0
+                    },
+                    onQRCodeScanned,
+                    (error) => console.warn("QR Scanner error:", error)
+                );
+                
+                isCameraActive = true;
+                addLogEntry("Camera activated for verification");
+                updateButtonStates();
+                
+            } catch (error) {
+                showError("Failed to start camera: " + error.message);
+            }
+        }
+
+        // STOP CAMERA
+        function stopCamera() {
+            if (!isCameraActive) return;
+            
+            scanner.stop().then(() => {
+                isCameraActive = false;
+                addLogEntry("Camera deactivated");
+                updateButtonStates();
+            }).catch(error => {
+                console.error("Failed to stop camera:", error);
+            });
+        }
+
+        // HANDLE QR CODE SCAN
+        function onQRCodeScanned(decodedText, decodedResult) {
+            if (!decodedText) return;
+            
+            stopCamera();
+            processQRCode(decodedText);
+        }
+
+        // HANDLE FILE UPLOAD
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                scanner.scanFile(e.target.result, false)
+                    .then(decodedText => {
+                        processQRCode(decodedText);
+                    })
+                    .catch(error => {
+                        showError("Failed to decode QR from image: " + error);
+                    });
+            };
+            reader.readAsDataURL(file);
+            fileInput.value = '';
+        }
+
+        // PROCESS QR CODE DATA
+        function processQRCode(qrText) {
+            addLogEntry("QR code detected, processing verification");
+            
+            const operativeData = parseQRData(qrText);
+            if (!operativeData.reference) {
+                showVerificationResult(false, "Invalid QR code format. No reference found.");
+                return;
+            }
+            
+            const operative = verifyOperative(operativeData.reference);
+            
+            if (operative) {
+                if (operative.status !== "ACTIVE") {
+                    showVerificationResult(false, `Operative ${operative.designation} status: ${operative.status}`);
+                } else {
+                    operative.verification_count++;
+                    showVerificationResult(true, operative);
+                    simulateSecureNotification(operative);
+                }
+            } else {
+                showVerificationResult(false, `Operative not found in secure database`);
+            }
+            
+            addLogEntry(`Verification attempt for reference: ${operativeData.reference}`);
+        }
+
+        // PARSE QR DATA
+        function parseQRData(qrText) {
+            const operativeData = {};
+            const lines = qrText.split('\n');
+            
+            lines.forEach(line => {
+                if (line.includes(': ')) {
+                    const [key, value] = line.split(': ');
+                    operativeData[key.toLowerCase()] = value.trim();
+                }
+            });
+            
+            return operativeData;
+        }
+
+        // VERIFY OPERATIVE
+        function verifyOperative(reference) {
+            return OPERATIVES.find(op => 
+                op.reference === reference || 
+                op.designation === reference
+            );
+        }
+
+        // SHOW VERIFICATION RESULT
+        function showVerificationResult(success, data) {
+            verificationResult.style.display = 'block';
+            logsPanel.style.display = 'block';
+            
+            if (success) {
+                const operative = data;
+                resultStatus.className = 'verification-status status-confirmed';
+                resultStatus.textContent = 'CONFIRMED';
+                
+                verificationDetails.innerHTML = `
+                    <div class="detail-item">
+                        <div class="detail-label">Designation</div>
+                        <div class="detail-value">${operative.designation}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Clearance</div>
+                        <div class="detail-value">${operative.clearance}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Reference</div>
+                        <div class="detail-value">${operative.reference}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Verification Time</div>
+                        <div class="detail-value">${getSecureTimestamp()}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Secure Notification</div>
+                        <div class="detail-value">DISPATCHED</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Total Verifications</div>
+                        <div class="detail-value">${operative.verification_count}</div>
+                    </div>
+                `;
+                
+                verificationMessage.innerHTML = `
+                    Operative ${operative.designation} identity confirmed.<br>
+                    Secure notification dispatched to ${operative.secure_email}.<br>
+                    Verification logged in secure audit trail.
+                `;
+                
+                addLogEntry(`Operative ${operative.designation} verified successfully`);
+                
+            } else {
+                resultStatus.className = 'verification-status status-denied';
+                resultStatus.textContent = 'DENIED';
+                
+                verificationDetails.innerHTML = `
+                    <div class="detail-item">
+                        <div class="detail-label">Verification Result</div>
+                        <div class="detail-value">ACCESS DENIED</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Security Alert</div>
+                        <div class="detail-value">GENERATED</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Verification Time</div>
+                        <div class="detail-value">${getSecureTimestamp()}</div>
+                    </div>
+                `;
+                
+                verificationMessage.innerHTML = `
+                    Verification failed: ${data}<br>
+                    Security protocols engaged. This attempt has been logged.<br>
+                    Repeated unauthorized access attempts will trigger additional security measures.
+                `;
+                
+                addLogEntry(`Verification failed: ${data}`);
+            }
+            
+            // Auto-scroll to result
+            verificationResult.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // SIMULATE SECURE NOTIFICATION (Backend would handle actual email)
+        function simulateSecureNotification(operative) {
+            console.log(`[SECURE NOTIFICATION] Email dispatched to: ${operative.secure_email}`);
+            console.log(`Subject: BLACKNET OPERATIVE - Identity Verification Confirmed`);
+            console.log(`Content: Operative ${operative.designation} verified at ${getSecureTimestamp()}`);
+        }
+
+        // AUDIT LOG FUNCTIONS
+        function loadAuditLogs() {
+            const savedLogs = localStorage.getItem('blacknet_audit_logs');
+            if (savedLogs) {
+                auditLogs = JSON.parse(savedLogs);
+                updateLogDisplay();
+            }
+        }
+
+        function addLogEntry(event) {
+            const logEntry = {
+                timestamp: getSecureTimestamp(),
+                event: event
+            };
+            
+            auditLogs.unshift(logEntry);
+            if (auditLogs.length > 50) auditLogs.pop();
+            
+            localStorage.setItem('blacknet_audit_logs', JSON.stringify(auditLogs));
+            updateLogDisplay();
+        }
+
+        function updateLogDisplay() {
+            logsContent.innerHTML = auditLogs.map(log => `
+                <div class="log-entry">
+                    <span class="log-time">[${log.timestamp}]</span>
+                    <span class="log-event">${log.event}</span>
+                </div>
+            `).join('');
+        }
+
+        function clearAuditLogs() {
+            if (confirm("Clear all audit logs? This action cannot be undone.")) {
+                auditLogs = [];
+                localStorage.removeItem('blacknet_audit_logs');
+                updateLogDisplay();
+                addLogEntry("Audit logs cleared by operator");
+            }
+        }
+
+        // UTILITY FUNCTIONS
+        function getSecureTimestamp() {
+            const now = new Date();
+            return now.toISOString().replace('T', ' ').substring(0, 19) + 'Z';
+        }
+
+        function updateButtonStates() {
+            startCameraBtn.disabled = isCameraActive;
+            stopCameraBtn.disabled = !isCameraActive;
+        }
+
+        function showError(message) {
+            console.error(message);
+            addLogEntry(`ERROR: ${message}`);
+        }
+
+        // SECURITY MEASURES
+        document.addEventListener('contextmenu', (e) => e.preventDefault());
+        document.addEventListener('keydown', (e) => {
+            // Prevent F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+            if (
+                e.key === 'F12' ||
+                (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) ||
+                (e.ctrlKey && e.key === 'u')
+            ) {
+                e.preventDefault();
+                addLogEntry("Security: Developer tools access attempt blocked");
+            }
+        });
+
+        // INITIAL LOG ENTRY
+        addLogEntry("System initialized - Secure verification protocol engaged");
+    </script>
+</body>
+</html>
