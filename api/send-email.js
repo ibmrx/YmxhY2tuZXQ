@@ -1,4 +1,4 @@
-const { Resend } = require('resend');
+const Resend = require('resend').Resend;
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -20,6 +20,8 @@ const allowCors = fn => async (req, res) => {
 };
 
 const handler = async (req, res) => {
+    console.log('BLACKNET Email API called');
+    
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
@@ -27,29 +29,28 @@ const handler = async (req, res) => {
     try {
         const { operative } = req.body;
         
-        console.log('API called for:', operative?.secure_email);
+        console.log('Processing for:', operative?.secure_email);
         
         if (!operative || !operative.secure_email) {
             return res.status(400).json({ 
-                error: 'Missing operative data',
-                received: req.body 
+                error: 'Missing operative data'
             });
         }
 
         if (!process.env.RESEND_API_KEY) {
-            console.error('RESEND_API_KEY is not set in environment variables');
+            console.log('RESEND_API_KEY not configured');
             return res.status(500).json({ 
-                error: 'Server configuration error',
-                message: 'RESEND_API_KEY environment variable is missing'
+                error: 'Server configuration incomplete',
+                message: 'RESEND_API_KEY environment variable required'
             });
         }
 
         const html = generateHTMLTemplate(operative);
         const text = generateTextTemplate(operative);
         
-        console.log('Attempting to send email to:', operative.secure_email);
+        console.log('Sending email to:', operative.secure_email);
         
-        const { data, error } = await resend.emails.send({
+        const result = await resend.emails.send({
             from: 'BLACKNET OPERATIVE <verification@blacknet-operative.resend.dev>',
             to: [operative.secure_email],
             subject: 'BLACKNET OPERATIVE - Identity Verification Confirmed',
@@ -57,30 +58,26 @@ const handler = async (req, res) => {
             text: text
         });
 
-        if (error) {
-            console.error('Resend API error:', error);
+        if (result.error) {
+            console.log('Resend error:', result.error);
             return res.status(500).json({ 
                 error: 'Email service error',
-                details: error.message,
-                type: 'resend_error'
+                details: result.error.message
             });
         }
 
-        console.log('Email sent successfully. ID:', data?.id);
+        console.log('Email sent successfully');
         return res.status(200).json({ 
             success: true, 
             message: 'Email dispatched to operative',
-            emailId: data?.id,
-            sentTo: operative.secure_email
+            emailId: result.data?.id
         });
 
     } catch (error) {
-        console.error('Server error:', error);
-        console.error('Stack trace:', error.stack);
+        console.log('Server error:', error);
         return res.status(500).json({ 
             error: 'Internal server error',
-            message: error.message,
-            type: 'server_error'
+            details: error.message
         });
     }
 };
