@@ -602,7 +602,7 @@ async function sendResendEmail(operative) {
         
         const result = await response.json();
         if (result.success) {
-            addLogEntry(`✔ Secure email dispatched to ${operative.secure_email}`);
+            addLogEntry(`Secure email dispatched to ${operative.secure_email}`);
             return true;
         } else {
             throw new Error(result.error || 'Email failed');
