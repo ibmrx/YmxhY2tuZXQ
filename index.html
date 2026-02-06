@@ -588,7 +588,33 @@
         function initializeScanner() {
             scanner = new Html5Qrcode("reader");
         }
+async function sendResendEmail(operative) {
+    try {
+        console.log('📧 Sending email to:', operative.secure_email);
+        
+        const response = await fetch('/api/send-email', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ operative })
+        });
 
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
+        
+        const result = await response.json();
+        if (result.success) {
+            addLogEntry(`✔ Secure email dispatched to ${operative.secure_email}`);
+            return true;
+        } else {
+            throw new Error(result.error || 'Email failed');
+        }
+        
+    } catch (error) {
+        console.error('✘ Email error:', error);
+        addLogEntry(`Email dispatch failed: ${error.message}`);
+        console.log(`[FALLBACK] Simulated email to: ${operative.secure_email}`);
+        return false;
+    }
+}
         // CREATE MANUAL ENTRY SECTION
         function createManualEntrySection() {
             const manualSection = document.createElement('div');
@@ -624,7 +650,7 @@
         }
 
         // HANDLE MANUAL ENTRY
-        function handleManualEntry() {
+        async function handleManualEntry() {
             const reference = document.getElementById('manualEntry').value.trim().toUpperCase();
             if (!reference) {
                 showError("No operative reference entered");
@@ -645,7 +671,10 @@
                 } else {
                     operative.verification_count = (operative.verification_count || 0) + 1;
                     showVerificationResult(true, operative);
-                    simulateSecureNotification(operative);
+                    const emailSent = await sendResendEmail(operative);
+if (!emailSent) {
+    console.log('Email system offline, verification still logged');
+}
                 }
             } else {
                 showVerificationResult(false, `Operative not found: ${reference}`);
@@ -940,7 +969,7 @@
         }
 
         // PROCESS QR CODE DATA
-        function processQRCode(qrText) {
+        async function processQRCode(qrText) {
             addLogEntry("QR code detected, processing verification");
             
             const operativeData = parseQRData(qrText);
@@ -957,7 +986,14 @@
                 } else {
                     operative.verification_count = (operative.verification_count || 0) + 1;
                     showVerificationResult(true, operative);
-                    simulateSecureNotification(operative);
+                    try {
+    const emailSent = await sendResendEmail(operative);
+    if (!emailSent) {
+        console.log('Note: Email system offline');
+    }
+} catch (emailError) {
+    console.error('Email failed:', emailError);
+}
                 }
             } else {
                 showVerificationResult(false, `Operative not found: ${operativeData.reference}`);
@@ -1070,6 +1106,7 @@
             verificationResult.scrollIntoView({ behavior: 'smooth' });
         }
 
+       
         // SIMULATE SECURE NOTIFICATION (Backend would handle actual email)
         function simulateSecureNotification(operative) {
             console.log(`[SECURE NOTIFICATION] Email dispatched to: ${operative.secure_email}`);
