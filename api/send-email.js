@@ -1,23 +1,53 @@
-import { Resend } from 'resend';
+const { Resend } = require('resend');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export default async function handler(req, res) {
+const allowCors = fn => async (req, res) => {
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
+  
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+  
+  return await fn(req, res);
+};
+
+const handler = async (req, res) => {
     if (req.method !== 'POST') {
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'POST');
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
     try {
         const { operative } = req.body;
         
+        console.log('API called for:', operative?.secure_email);
+        
         if (!operative || !operative.secure_email) {
-            return res.status(400).json({ error: 'Missing operative data' });
+            return res.status(400).json({ 
+                error: 'Missing operative data',
+                received: req.body 
+            });
+        }
+
+        if (!process.env.RESEND_API_KEY) {
+            console.error('RESEND_API_KEY is not set in environment variables');
+            return res.status(500).json({ 
+                error: 'Server configuration error',
+                message: 'RESEND_API_KEY environment variable is missing'
+            });
         }
 
         const html = generateHTMLTemplate(operative);
         const text = generateTextTemplate(operative);
+        
+        console.log('Attempting to send email to:', operative.secure_email);
         
         const { data, error } = await resend.emails.send({
             from: 'BLACKNET OPERATIVE <verification@blacknet-operative.resend.dev>',
@@ -29,21 +59,31 @@ export default async function handler(req, res) {
 
         if (error) {
             console.error('Resend API error:', error);
-            return res.status(500).json({ error: error.message });
+            return res.status(500).json({ 
+                error: 'Email service error',
+                details: error.message,
+                type: 'resend_error'
+            });
         }
 
-        console.log('Email sent successfully to:', operative.secure_email);
+        console.log('Email sent successfully. ID:', data?.id);
         return res.status(200).json({ 
             success: true, 
-            message: 'Email dispatched',
-            emailId: data.id 
+            message: 'Email dispatched to operative',
+            emailId: data?.id,
+            sentTo: operative.secure_email
         });
 
     } catch (error) {
         console.error('Server error:', error);
-        return res.status(500).json({ error: 'Internal server error' });
+        console.error('Stack trace:', error.stack);
+        return res.status(500).json({ 
+            error: 'Internal server error',
+            message: error.message,
+            type: 'server_error'
+        });
     }
-}
+};
 
 function generateHTMLTemplate(operative) {
     return `
@@ -80,7 +120,7 @@ function generateHTMLTemplate(operative) {
             <div class="system-title">Secure Identity Verification System</div>
         </div>
         <div class="verification-status">
-            <div class="status-badge">✓ Identity Verification Confirmed</div>
+            <div class="status-badge">Identity Verification Confirmed</div>
         </div>
         <div class="details-grid">
             <div class="detail-card">
@@ -146,3 +186,5 @@ Secure Communications
 Protocol Version: 2.7.1
     `;
 }
+
+module.exports = allowCors(handler);
