@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BLACKNET ID</title>
     <link rel="icon" type="image/png" href="https://uploads.onecompiler.io/437muad7y/44c5p4unt/LOGO%20W%20BACKGROUND.png">
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
     <style>
@@ -591,46 +590,90 @@
             scanner = new Html5Qrcode("reader");
         }
         // EMAILJS FUNCTION - REPLACES sendResendEmail
-async function sendBlacknetEmail(operative) {
+        async function sendBlacknetEmail(operative) {
     try {
-        console.log('BLACKNET: Sending verification email to:', operative.secure_email);
+        console.log('BLACKNET: Sending verification to:', operative.secure_email);
         
-        // Initialize EmailJS (only once)
+        // Initialize EmailJS with YOUR public key
         if (!window.emailjsInitialized) {
-            emailjs.init("YOUR_PUBLIC_KEY_HERE"); // ← Replace with your public key
+            emailjs.init("7nXKeWjyHF-Mu-s2u"); // Your public key
             window.emailjsInitialized = true;
+            console.log('EmailJS initialized');
         }
         
-        // Send email using EmailJS
+        // Create email parameters
+        const templateParams = {
+            to_email: operative.secure_email,
+            operative_name: operative.designation,
+            operative_reference: operative.reference,
+            operative_clearance: operative.clearance || 'LEVEL 7',
+            verification_time: getSecureTimestamp(),
+            verification_count: operative.verification_count || 1,
+            blacknet_system: 'BLACKNET OPERATIVE Verification System'
+        };
+        
+        console.log('Sending with params:', templateParams);
+        
+        // Send email using EmailJS - WITH QUOTES!
         const response = await emailjs.send(
-            service_rbx0k6d,    // ← Replace with your service ID
-            template_4vunj6r,   // ← Replace with your template ID
-            {
-                to_email: operative.secure_email,
-                operative_name: operative.designation,
-                operative_reference: operative.reference,
-                operative_clearance: operative.clearance || 'LEVEL 7',
-                verification_time: getSecureTimestamp(),
-                verification_count: operative.verification_count || 1,
-                blacknet_system: 'BLACKNET OPERATIVE Verification'
-            }
+            'service_rbx0k6d',    // Your service ID (with quotes)
+            'template_4vunj6r',   // Your template ID (with quotes)
+            templateParams
         );
         
-        console.log('Email sent successfully!', response);
+        console.log('Email sent! Status:', response.status, 'Text:', response.text);
         addLogEntry(`Secure email dispatched to ${operative.secure_email}`);
         return true;
         
     } catch (error) {
         console.error('EmailJS error:', error);
+        console.error('Full error details:', {
+            status: error.status,
+            text: error.text,
+            message: error.message
+        });
+        
         addLogEntry(`Email dispatch failed: ${error.text || error.message}`);
         
-        // Fallback simulation
+        // Fallback to console simulation
         console.log(`[FALLBACK] Simulated email to: ${operative.secure_email}`);
         simulateSecureNotification(operative);
         return false;
     }
 }
-
+        // CREATE MANUAL ENTRY SECTION
+        function createManualEntrySection() {
+            const manualSection = document.createElement('div');
+            manualSection.className = 'manual-entry';
+            manualSection.style.cssText = 'margin-top: 20px; padding: 20px; background: #1a1a1a; border: 1px solid #333;';
+            
+            manualSection.innerHTML = `
+                <div style="font-size: 16px; margin-bottom: 15px; color: #fff;">DIRECT OPERATIVE VERIFICATION</div>
+                <div style="color: #888; font-size: 13px; margin-bottom: 15px;">
+                    Enter operative reference for direct verification.
+                </div>
+                <input type="text" id="manualEntry" 
+                       style="width: 100%; background: #0a0a0a; color: #e0e0e0; 
+                              border: 1px solid #333; padding: 12px; font-family: monospace;
+                              font-size: 14px; letter-spacing: 1px;"
+                       placeholder="Enter operative reference">
+                <button id="submitManual" class="btn btn-primary" style="margin-top: 10px; width: 100%;">
+                    VERIFY OPERATIVE
+                </button>
+            `;
+            
+            document.querySelector('.container').insertBefore(manualSection, document.querySelector('.footer'));
+            
+            // Add event listener for manual entry
+            document.getElementById('submitManual').addEventListener('click', handleManualEntry);
+            
+            // Allow Enter key to submit
+            document.getElementById('manualEntry').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleManualEntry();
+                }
+            });
+        }
         // HANDLE MANUAL ENTRY
         async function handleManualEntry() {
             const reference = document.getElementById('manualEntry').value.trim().toUpperCase();
@@ -653,7 +696,7 @@ async function sendBlacknetEmail(operative) {
                 } else {
                     operative.verification_count = (operative.verification_count || 0) + 1;
                     showVerificationResult(true, operative);
-                    cconst emailSent = await sendBlacknetEmail(operative);
+                    const emailSent = await sendBlacknetEmail(operative);
 if (!emailSent) {
     console.log('Email system offline, verification still logged');
 }
